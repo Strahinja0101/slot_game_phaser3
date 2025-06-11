@@ -10,6 +10,7 @@ class SlotGame extends Phaser.Scene {
   create() {
     this.reelSymbols = ['🍒', '🍋', '🔔', '7', '⭐'];
     this.reels = [];
+    this.spinInProgress = false;
     const centerX = this.cameras.main.width / 2;
     const centerY = this.cameras.main.height / 2;
     const spacing = 100;
@@ -31,12 +32,46 @@ class SlotGame extends Phaser.Scene {
   }
 
   spin() {
-    this.updateReels();
-    if (this.checkWin()) {
-      this.showMessage('You Win!');
-    } else {
-      this.showMessage('Try Again');
+    if (this.spinInProgress) {
+      return;
     }
+
+    this.spinInProgress = true;
+
+    if (this.messageText) {
+      this.messageText.destroy();
+    }
+
+    this.currentReel = 0;
+    this.spinNextReel();
+  }
+
+  spinNextReel() {
+    const reel = this.reels[this.currentReel];
+    const cycles = 15 + this.currentReel * 5;
+
+    this.time.addEvent({
+      delay: 80,
+      repeat: cycles,
+      callback: () => {
+        const symbol = Phaser.Utils.Array.GetRandom(this.reelSymbols);
+        reel.setText(symbol);
+      },
+      callbackScope: this,
+      onComplete: () => {
+        this.currentReel++;
+        if (this.currentReel < this.reels.length) {
+          this.spinNextReel();
+        } else {
+          this.spinInProgress = false;
+          if (this.checkWin()) {
+            this.showMessage('You Win!');
+          } else {
+            this.showMessage('Try Again');
+          }
+        }
+      }
+    });
   }
 
   updateReels() {
